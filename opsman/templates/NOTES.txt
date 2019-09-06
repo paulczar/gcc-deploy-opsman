@@ -1,0 +1,7 @@
+Congratulations you have deployed Pivotal Ops Manager to GCP
+
+Run the following to get the IP address of Ops Manager.
+
+```
+IP=kubectl -n {{ .Release.Namespace }} get instance {{ include "opsman.fullname" . }}-opsman -o json | jq .status.primaryExternalIP
+```

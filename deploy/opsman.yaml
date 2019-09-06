@@ -1,0 +1,362 @@
+---
+# Source: opsman/templates/image.yaml
+apiVersion: "compute.google.golang.org/v1"
+kind: "Image"
+metadata:
+  name: "gcc-opsman-2-6-8-build-192"
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  name: "gcc-opsman-2-6-8-build-192"
+  description: "image for operations manager version - 2.6.8-build.192"
+  rawDisk:
+    source: "https://storage.googleapis.com/ops-manager-us/pcf-gcp-2.6.8-build.192.tar.gz"
+---
+
+---
+# Source: opsman/templates/instance.yaml
+apiVersion: "compute.google.golang.org/v1"
+kind: "Instance"
+metadata:
+  name: "gcc-opsman"
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  zone: us-central1-a
+  name: "gcc-opsman"
+  description: "opsman (2.6.8-build.192) for running pks"
+  # can be full URL or just the machineType, if latter will expand it out using project id and zone.
+  #machineType: https://www.googleapis.com/compute/v1/projects/<gcp-project-id>/zones/us-central1-a/machineTypes/custom-2-4096
+  machineType: zones/us-central1-a/machineTypes/n1-standard-2
+  tags:
+    items: ["allow-ssh", "allow-https", "opsman"]
+  disks:
+    - type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        diskName: gcc-opsman-root
+        diskType: zones/us-central1-a/diskTypes/pd-ssd
+        diskSizeGb: "150"
+        # currently needs to be full URL
+        sourceImage: "global/images/gcc-opsman-2-6-8-build-192"
+  networkInterfaces:
+      # can be full URL or just the network name, if latter will expand it out using project id assuming a global network.
+      # - network: https://www.googleapis.com/compute/v1/projects/debian-cloud/global/networks/default
+    - subnetwork: regions/us-central1/subnetworks/gcc-opsman-pks-infrastructure
+      networkIP: 192.168.101.5
+      accessConfigs:
+        - name: external-nat
+
+---
+# Source: opsman/templates/pks-lb.yaml
+apiVersion: "compute.google.golang.org/v1"
+kind: "TargetPool"
+metadata:
+  name: "gcc-opsman-pks-api"
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  name: gcc-opsman-pks-api
+  region: us-central1
+  instances: []
+---
+apiVersion: "compute.google.golang.org/v1"
+kind: "ForwardingRule"
+metadata:
+  name: "gcc-opsman-pks-api"
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  name: gcc-opsman-pks-api
+  IPAddress: https://www.googleapis.com/compute/v1/projects/pgtm-pczarkowski/regions/us-central1/addresses/gcc-opsman-pks-api
+  IPProtocol: TCP
+  portRange: "8443"
+  region: us-central1
+  target: https://www.googleapis.com/compute/v1/projects/pgtm-pczarkowski/regions/us-central1/targetPools/gcc-opsman-pks-api
+---
+apiVersion: "compute.google.golang.org/v1"
+kind: "ForwardingRule"
+metadata:
+  name: "gcc-opsman-pks-uaac"
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  name: pks-uaac
+  IPAddress: https://www.googleapis.com/compute/v1/projects/pgtm-pczarkowski/regions/us-central1/addresses/gcc-opsman-pks-api
+  IPProtocol: TCP
+  portRange: "9021"
+  region: us-central1
+  target: https://www.googleapis.com/compute/v1/projects/pgtm-pczarkowski/regions/us-central1/targetPools/gcc-opsman-pks-api
+---
+apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+kind: ComputeFirewall
+metadata:
+  name: "gcc-opsman-pks-api"
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  description: allow pks api
+  allow:
+    - protocol: tcp
+      ports: ["8443","9021"]
+  networkRef:
+    name: gcc-opsman-pks-network
+  targetTags: ["pks-api"]
+  sourceRanges: ["0.0.0.0/0"]
+---
+# Source: opsman/templates/address.yaml
+apiVersion: compute.google.golang.org/v1
+kind: Address
+metadata:
+  name: gcc-opsman-pks-api
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  region: us-central1
+  name: gcc-opsman-pks-api
+
+---
+# Source: opsman/templates/firewall.yaml
+apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+kind: ComputeFirewall
+metadata:
+  name: "gcc-opsman-allow-https"
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  description: allow https traffic
+  allow:
+    - protocol: tcp
+      ports: ["443"]
+  networkRef:
+    name: gcc-opsman-pks-network
+  sourceRanges: ["0.0.0.0/0"]
+  targetTags: ["allow-https"]
+---
+apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+kind: ComputeFirewall
+metadata:
+  name: "gcc-opsman-allow-ssh"
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  description: allow ssh traffic
+  allow:
+    - protocol: tcp
+      ports: ["22"]
+  networkRef:
+    name: gcc-opsman-pks-network
+  sourceRanges: ["0.0.0.0/0"]
+  targetTags: ["allow-ssh"]
+---
+apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+kind: ComputeFirewall
+metadata:
+  name: "gcc-opsman-allow-http"
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  description: allow ssh traffic
+  allow:
+    - protocol: tcp
+      ports: ["80"]
+  networkRef:
+    name: gcc-opsman-pks-network
+  sourceRanges: ["0.0.0.0/0"]
+  targetTags: ["allow-http"]
+---
+apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+kind: ComputeFirewall
+metadata:
+  name: "gcc-opsman-all"
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  description: allow internal
+  allow:
+    - protocol: tcp
+    - protocol: udp
+    - protocol: icmp
+  networkRef:
+    name: gcc-opsman-pks-network
+  targetTags: ["pkslab","opsman"]
+  sourceTags: ["pkslab","opsman"]
+---
+# Source: opsman/templates/network.yaml
+apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+kind: ComputeNetwork
+metadata:
+  name: gcc-opsman-pks-network
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  description: network for PKS install
+  routingMode: REGIONAL
+---
+apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+kind: ComputeSubnetwork
+metadata:
+  name: gcc-opsman-pks-infrastructure
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  description: infrastructure
+  #gatewayAddress: 192.168.101.1
+  ipCidrRange: 192.168.101.0/26
+  networkRef:
+    name: gcc-opsman-pks-network
+  region: us-central1
+---
+apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+kind: ComputeSubnetwork
+metadata:
+  name: gcc-opsman-pks-subnet
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  description: pks
+  #gatewayAddress: 192.168.16.1
+  ipCidrRange: 192.168.16.0/26
+  networkRef:
+    name: gcc-opsman-pks-network
+  region: us-central1
+---
+apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+kind: ComputeSubnetwork
+metadata:
+  name: gcc-opsman-pks-services
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  description: services
+  #gatewayAddress: 192.168.20.1
+  ipCidrRange: 192.168.20.0/22
+  networkRef:
+    name: gcc-opsman-pks-network
+  region: us-central1
+
+---
+# Source: opsman/templates/dns.yaml
+apiVersion: dns.google.golang.org/v1
+kind: ManagedZone
+metadata:
+  name: gcc-opsman
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  name: gcc-opsman
+  dnsName: "demo.paulczar.wtf."
+  description: "zone for gcc-opsman - demo.paulczar.wtf"
+---
+apiVersion: dns.google.golang.org/v1
+kind: Record
+metadata:
+  name: gcc-opsman
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+  annotations:
+    dns.gce/zone: "demo.paulczar.wtf."
+spec:
+  name: "opsman.demo.paulczar.wtf."
+  type: "A"
+  ttl: 120
+  rrdatas: ["120.0.0.2"]
+
+---
+# Source: opsman/templates/database.yaml
+apiVersion: sql.cnrm.cloud.google.com/v1alpha3
+kind: SQLInstance
+metadata:
+  name: gcc-opsman
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  region: us-central1
+  databaseVersion: MYSQL_5_7
+  settings:
+    tier: db-n1-standard-1
+---
+apiVersion: sql.cnrm.cloud.google.com/v1alpha3
+kind: SQLDatabase
+metadata:
+  name: gcc-opsman
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  charset: utf8mb4
+  collation: utf8mb4_bin
+  instanceRef:
+    name: gcc-opsman
+---
+apiVersion: sql.cnrm.cloud.google.com/v1alpha3
+kind: SQLUser
+metadata:
+  name: gcc-opsman
+  labels:
+    app.kubernetes.io/name: opsman
+    helm.sh/chart: opsman-0.1.0
+    app.kubernetes.io/instance: gcc
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  instanceRef:
+    name: gcc-opsman
+  host: "%"
+  password: "a-bad-opsman-password"

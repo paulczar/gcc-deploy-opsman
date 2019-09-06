@@ -1,0 +1,15 @@
+apiVersion: "compute.google.golang.org/v1"
+kind: "Image"
+metadata:
+  name: "{{ include "opsman.fullname" . }}-{{ .Values.version | replace "." "-" }}"
+  labels:
+    app.kubernetes.io/name: {{ include "opsman.name" . }}
+    helm.sh/chart: {{ include "opsman.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  name: "{{ include "opsman.fullname" . }}-{{ .Values.version | replace "." "-" }}"
+  description: "image for operations manager version - {{ .Values.version }}"
+  rawDisk:
+    source: "https://storage.googleapis.com/{{.Values.storageBucket }}/pcf-gcp-{{ .Values.version }}.tar.gz"
+---

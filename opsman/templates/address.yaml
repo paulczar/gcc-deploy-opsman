@@ -1,0 +1,12 @@
+apiVersion: compute.google.golang.org/v1
+kind: Address
+metadata:
+  name: {{ include "opsman.fullname" . }}-pks-api
+  labels:
+    app.kubernetes.io/name: {{ include "opsman.name" . }}
+    helm.sh/chart: {{ include "opsman.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  region: us-central1
+  name: {{ include "opsman.fullname" . }}-pks-api
