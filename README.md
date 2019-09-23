@@ -81,3 +81,30 @@ kubectl create namespace $PROJECT_ID
 helm template opsman --name gcc --namespace pgtm-pczarkowski > deploy/opsman.yaml
 kubectl -n $PROJECT_ID apply -f opsman.yaml
 ```
+
+## Set up DNS for opsman
+
+manually right now
+
+## Deploy Concourse
+
+1. edit `./concourse/values.yaml`
+
+2. Deploy
+
+```bash
+$ helm install stable/concourse --name concourse --version 8.2.5 \
+   --namespace concourse --values ./concourse/values.yaml
+```
+
+## Configure Opsman
+
+```bash
+fly -t control-plane login -c http://127.0.0.1:8080
+
+ fly -t control-plane set-pipeline \
+     -p install-pks \
+     -c pipeline.yml \
+     -l env.yml
+
+```
