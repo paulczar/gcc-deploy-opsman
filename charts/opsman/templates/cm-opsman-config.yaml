@@ -12,7 +12,7 @@ data:
   iaas.yaml: |-
     properties-configuration:
       iaas_configuration:
-        project: {{ .Values.opsman.config.projectID }}
+        project: {{ .Values.projectID }}
         default_deployment_tag: {{ include "opsman.fullname" . }}
         auth_json: SECRET
       director_configuration:
@@ -25,9 +25,9 @@ data:
         trusted_certificates: ""
         vm_password_type: generate
     az-configuration:
-      - name: us-central1-a
-      - name: us-central1-b
-      - name: us-central1-c
+    {{- range .Values.google.zones }}
+      - name: {{ . }}
+    {{- end }}}
     networks-configuration:
       icmp_checks_enabled: false
       networks:
@@ -39,7 +39,10 @@ data:
           reserved_ip_ranges: 192.168.101.1-192.168.101.9
           dns: 169.254.169.254
           gateway: 192.168.101.1
-          availability_zone_names: [us-central1-a,us-central1-b,us-central1-c]
+          availability_zone_names:
+          {{- range .Values.google.zones }}
+            - {{ . }}
+          {{- end }}
       - name: {{ include "opsman.fullname" . }}-pks-subnet
         service_network: false
         subnets:
@@ -48,7 +51,10 @@ data:
           reserved_ip_ranges: 192.168.16.1-192.168.16.9
           dns: 169.254.169.254
           gateway: 192.168.16.1
-          availability_zone_names: [us-central1-a,us-central1-b,us-central1-c]
+          availability_zone_names:
+          {{- range .Values.google.zones }}
+            - {{ . }}
+          {{- end }}
       - name: {{ include "opsman.fullname" . }}-pks-services
         service_network: true
         subnets:
@@ -57,12 +63,15 @@ data:
           reserved_ip_ranges: 192.168.20.1-192.168.20.9
           dns: 169.254.169.254
           gateway: 192.168.20.1
-          availability_zone_names: [us-central1-a,us-central1-b,us-central1-c]
+          availability_zone_names:
+          {{- range .Values.google.zones }}
+            - {{ . }}
+          {{- end }}
     network-assignment:
       network:
         name: {{ include "opsman.fullname" . }}-pks-infrastructure
       singleton_availability_zone:
-        name: us-central1-a
+        name: {{ index .Values.google.zones 1 }}
     resource-configuration:
       director:
         instance_type:

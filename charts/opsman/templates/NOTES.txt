@@ -17,7 +17,7 @@ IP=$(kubectl -n {{ .Release.Namespace }} get instance {{ include "opsman.fullnam
 Then update this helm chart with that IP like so:
 
 ```
-helm upgrade opsman ./charts/opsman --namespace pgtm-pczarkowski \
+helm upgrade opsman ./charts/opsman --namespace {{ .Release.Namespace }} \
   --set "opsmanAddress=$IP"
 ```
 

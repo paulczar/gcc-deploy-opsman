@@ -1,0 +1,36 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: configure-opsman-pks-user
+spec:
+  steps:
+    - name: configure-opsman-pks-user
+      image: paulczar/om
+      env:
+        - name: OM_TARGET
+          valueFrom:
+            configMapKeyRef:
+              name: opsman-auth
+              key: host
+        - name: OM_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: opsman-auth
+              key: user
+        - name: OM_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: opsman-auth
+              key: password
+        - name: DNS
+          valueFrom:
+            configMapKeyRef:
+              name: pks-config
+              key: dns
+      volumeMounts:
+        - name: pks-config-scripts
+          mountPath: /scripts
+      command:
+        - bash
+      args:
+        - /scripts/create_user.sh

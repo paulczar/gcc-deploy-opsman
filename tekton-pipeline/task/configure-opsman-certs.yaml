@@ -22,12 +22,12 @@ spec:
             secretKeyRef:
               name: opsman-auth
               key: password
-        - name: CERT
+        - name: CERT_PEM
           valueFrom:
             secretKeyRef:
               name: opsman-cert
               key: tls.crt
-        - name: KEY
+        - name: KEY_PEM
           valueFrom:
             secretKeyRef:
               name: opsman-cert
@@ -37,5 +37,5 @@ spec:
       args:
         - --skip-ssl-validation
         - update-ssl-certificate
-        - "--certificate-pem=$(CERT)"
-        - "--private-key-pem=$(KEY)"
+        - "--certificate-pem=$(CERT_PEM)"
+        - "--private-key-pem=$(KEY_PEM)"

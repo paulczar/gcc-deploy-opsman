@@ -40,11 +40,11 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   name: pks-uaac
-  IPAddress: https://www.googleapis.com/compute/v1/projects/pgtm-pczarkowski/regions/us-central1/addresses/{{ include "opsman.fullname" . }}-pks-api
+  IPAddress: https://www.googleapis.com/compute/v1/projects/{{ .Values.projectID }}/regions/us-central1/addresses/{{ include "opsman.fullname" . }}-pks-api
   IPProtocol: TCP
   portRange: "9021"
   region: us-central1
-  target: https://www.googleapis.com/compute/v1/projects/pgtm-pczarkowski/regions/us-central1/targetPools/{{ include "opsman.fullname" . }}-pks-api
+  target: https://www.googleapis.com/compute/v1/projects/{{ .Values.projectID }}/regions/us-central1/targetPools/{{ include "opsman.fullname" . }}-pks-api
 ---
 apiVersion: compute.cnrm.cloud.google.com/v1alpha1
 kind: ComputeFirewall
@@ -62,5 +62,5 @@ spec:
       ports: ["8443","9021"]
   networkRef:
     name: {{ include "opsman.fullname" . }}-pks-network
-  targetTags: ["pks-api"]
+  targetTags: ["{{ include "opsman.fullname" . }}-pks-api"]
   sourceRanges: ["0.0.0.0/0"]

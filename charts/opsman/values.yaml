@@ -18,10 +18,18 @@ database:
 
 dns:
   # don't put a `.` at the end.
-  zone:
+  zone: example.com
 
 opsmanAddress:
+pksAddress:
+projectID:
 
-opsman:
-  config:
-    projectID:
+certManagerEmail: paul@here.com
+
+google:
+  region: us-central1
+  zones: [us-central1-a, us-central1-b, us-central1-c]
+
+pks:
+  plans:
+    addons: ""

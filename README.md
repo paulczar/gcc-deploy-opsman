@@ -76,18 +76,11 @@ helm install gcp-operator ./charts/gcp-operator --namespace cnrm-system \
 
 This will allow for the use of a real cert for opsman
 
-> Note you'll need to edit `cluster-issuer.yaml` to suit your environment, I should add it into the helm chart.
-
 ```
 kubectl apply -f charts/cert-manager/manifests/crds.yaml
 helm install cert-manager stable/cert-manager \
   --values charts/cert-manager/values.yaml \
   --namespace cnrm-system
-
-kubectl apply -f charts/cert-manager/manifests/cluster-issuer.yaml
-
-```
-
 ```
 
 ## Deploy Ops Manager
@@ -107,11 +100,14 @@ helm install opsman ./charts/opsman --namespace $PROJECT_ID \
 Get opsman ip address from gcloud and pass it to a helm upgrade (you should persist it in a values file)
 
 ```bash
-IP=$(gcloud compute addresses describe opsman-pks-api --region us-central1 --format "value(address)")
+PKS_IP=$(gcloud compute addresses describe opsman-pks-api --region us-central1 --format "value(address)")
+
+OPSMAN_IP=$()
 
 helm upgrade opsman ./charts/opsman --namespace $PROJECT_ID \
-  --set "opsmanIP=$IP" --set "dns.zone=$FQDN" \
-  --set "opsman.config.projectID=$PROJECT_ID"
+  --set "opsmanAddress=$OPSMAN_IP" --set "dns.zone=$FQDN" \
+  --set "projectID=$PROJECT_ID" \
+  --set "pksAddress=$PKS_IP"
 ```
 
 

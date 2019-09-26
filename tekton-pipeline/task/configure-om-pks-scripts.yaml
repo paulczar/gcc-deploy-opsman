@@ -92,3 +92,34 @@ data:
 
     echo "PKS API: https://${DNS}:9021"
     echo "UAA: https://${DNS}:8443"
+
+  create_user.sh: |
+    #!/bin/bash
+
+    set -eux
+
+    echo "====> Waiting for opsman to respond with real cert"
+    until $(curl --output /dev/null --silent --head --fail https://${OM_TARGET}/setup); do
+      printf '.'
+      sleep 5
+    done
+
+    echo "====> log into UAA"
+    UAA_CRED=$(om credentials --product-name pivotal-container-service \
+      --credential-reference .properties.pks_uaa_management_admin_client \
+      --credential-field secret)
+
+    uaa target https://${DNS}:8443
+
+    uaa get-client-credentials-token admin -s "$UAA_CRED"
+
+    echo "====> check if user ${OM_USERNAME} exists"
+    if ! uaa get-user ${OM_USERNAME} > /dev/null; then
+      echo "--> create user ${OM_USERNAME}"
+      uaa create-user ${OM_USERNAME} --email ${OM_USERNAME}@${DNS} \
+        -p ${OM_PASSWORD} --familyName ${OM_USERNAME} --givenName ${OM_USERNAME}
+      echo "--> add user ${OM_USERNAME} to pks.clusters.admin"
+      uaa add-member pks.clusters.admin ${OM_USERNAME}
+    else
+      echo "user ${OM_USERNAME} already exists"
+    fi

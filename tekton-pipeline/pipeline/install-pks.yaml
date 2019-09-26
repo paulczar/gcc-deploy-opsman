@@ -22,3 +22,8 @@ spec:
       runAfter: [configure-opsman-iaas]
       taskRef:
         name: configure-opsman-pks
+
+    - name: configure-opsman-pks-user
+      runAfter: [configure-opsman-pks]
+      taskRef:
+        name: configure-opsman-pks-user
