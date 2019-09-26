@@ -26,20 +26,15 @@ data:
         echo "$response"
     )
 
-    if [[ -z "${CERT_PEM}" ]] || [[ -z "${KEY_PEM}" ]]; then
-      CERTIFICATES=$(om_generate_cert "${DNS}")
-      CERT_PEM=`echo $CERTIFICATES | jq -r '.certificate' | sed 's/^/        /'`
-      KEY_PEM=`echo $CERTIFICATES | jq -r '.key' | sed 's/^/        /'`
-    fi
     cat << EOF > /tmp/keys.yaml
     ---
     product-properties:
       .pivotal-container-service.pks_tls:
         value:
-          cert_pem: |
-    $CERT_PEM
-          private_key_pem: |
-    $KEY_PEM
+          cert_pem: |-
+    $(cat /etc/pks/certs/tls.crt | sed 's/^/        /')
+          private_key_pem: |-
+    $(cat /etc/pks/certs/tls.key | sed 's/^/        /')
     EOF
 
     echo "====> check if we already have pks staged"
@@ -84,8 +79,9 @@ data:
 
     # combine pks and keys
     echo "====> configuring PKS"
+    echo "--> combine config with TLS certs"
     yq m /etc/pks/config/pks.yaml /tmp/keys.yaml > /tmp/pks-with-keys.yaml
-
+    echo "--> configure product"
     om -k --request-timeout 3600 \
         configure-product \
         --config /tmp/pks-with-keys.yaml

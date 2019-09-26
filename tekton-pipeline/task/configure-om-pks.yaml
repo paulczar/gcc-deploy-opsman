@@ -37,21 +37,13 @@ spec:
             configMapKeyRef:
               name: pks-config
               key: version
-        - name: CERT_PEM
-          valueFrom:
-            secretKeyRef:
-              name: opsman-pks-cert
-              key: tls.crt
-        - name: KEY_PEM
-          valueFrom:
-            secretKeyRef:
-              name: opsman-pks-cert
-              key: tls.key
       volumeMounts:
         - name: pks-config-scripts
           mountPath: /scripts
         - name: pks-config-volume
           mountPath: /etc/pks/config
+        - name: pks-config-certs
+          mountPath: /etc/pks/certs
       command:
         - bash
       args:

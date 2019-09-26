@@ -22,3 +22,6 @@ spec:
       - name: pks-config-volume
         configMap:
           name: opsman-pks-config
+      - name: pks-config-certs
+        secret:
+          secretName: opsman-pks-cert
