@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: install-pks
+spec:
+  tasks:
+    - name: configure-opsman-auth
+      taskRef:
+        name: configure-opsman-auth
+
+    - name: configure-opsman-cert
+      runAfter: [configure-opsman-auth]
+      taskRef:
+        name: configure-opsman-cert
+
+    - name: configure-opsman-iaas
+      runAfter: [configure-opsman-cert]
+      taskRef:
+        name: configure-opsman-iaas
+
+    - name: configure-opsman-pks
+      runAfter: [configure-opsman-iaas]
+      taskRef:
+        name: configure-opsman-pks

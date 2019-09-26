@@ -1,0 +1,41 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: configure-opsman-iaas
+spec:
+  steps:
+    - name: configure-opsman-iaas
+      image: paulczar/om
+      env:
+        - name: OM_TARGET
+          valueFrom:
+            configMapKeyRef:
+              name: opsman-auth
+              key: host
+        - name: OM_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: opsman-auth
+              key: user
+        - name: OM_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: opsman-auth
+              key: password
+      volumeMounts:
+        - name: config-scripts
+          mountPath: /scripts
+        - name: iaas-config-files
+          mountPath: /etc/opsman/config
+        - name: iaas-config-secrets
+          mountPath: /etc/opsman/secrets
+      command:
+        - bash
+      args:
+        - /scripts/run.sh
+
+
+  # volumes:
+  #   - name: config-volume
+  #     configMap:
+  #       name: opsman-config-iaas

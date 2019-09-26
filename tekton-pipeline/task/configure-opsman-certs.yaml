@@ -1,0 +1,41 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: configure-opsman-cert
+spec:
+  steps:
+    - name: configure-opsman-cert
+      image: paulczar/om
+      env:
+        - name: OM_TARGET
+          valueFrom:
+              configMapKeyRef:
+                name: opsman-auth
+                key: host
+        - name: OM_USERNAME
+          valueFrom:
+              configMapKeyRef:
+                name: opsman-auth
+                key: user
+        - name: OM_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: opsman-auth
+              key: password
+        - name: CERT
+          valueFrom:
+            secretKeyRef:
+              name: opsman-cert
+              key: tls.crt
+        - name: KEY
+          valueFrom:
+            secretKeyRef:
+              name: opsman-cert
+              key: tls.key
+      command:
+        - om
+      args:
+        - --skip-ssl-validation
+        - update-ssl-certificate
+        - "--certificate-pem=$(CERT)"
+        - "--private-key-pem=$(KEY)"

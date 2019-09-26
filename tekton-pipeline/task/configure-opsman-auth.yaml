@@ -1,0 +1,38 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: configure-opsman-auth
+spec:
+  steps:
+    - name: configure-opsman-auth
+      image: paulczar/om
+      env:
+        - name: HOST
+          valueFrom:
+              configMapKeyRef:
+                name: opsman-auth
+                key: host
+        - name: USER
+          valueFrom:
+              configMapKeyRef:
+                name: opsman-auth
+                key: user
+        - name: PASS
+          valueFrom:
+            secretKeyRef:
+              name: opsman-auth
+              key: password
+        - name: DECRYPTION_PASS
+          valueFrom:
+            secretKeyRef:
+              name: opsman-auth
+              key: decryptionPassword
+      command:
+        - om
+      args:
+        - --target=$(HOST)
+        - --skip-ssl-validation
+        - configure-authentication
+        - --username=$(USER)
+        - --password=$(PASS)
+        - --decryption-passphrase=$(DECRYPTION_PASS)

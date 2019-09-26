@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opsman-iaas-config-scripts
+data:
+  run.sh: |
+    set -eux
+    echo "====> Waiting for opsman to respond with real cert"
+    until $(curl --output /dev/null --silent --head --fail https://${OM_TARGET}/setup); do
+      printf '.'
+      sleep 5
+    done
+
+    echo "====> Configure Operations Mananger IAAS"
+    echo "--> fetch google auth_json from secret"
+    yq w /etc/opsman/config/iaas.yaml \
+      properties-configuration.iaas_configuration.auth_json "$(cat /etc/opsman/secrets/key.json)" \
+      > /tmp/config.yaml
+
+    echo "--> send config to opsman"
+    # if om -k staged-products | grep pivotal-container-service > /dev/null; then
+    #   echo "PKS is already staged, do not reconfigure IAAS"
+    # else
+      om -k --request-timeout 3600 \
+        configure-director --config /tmp/config.yaml
+
+      echo "====> Apply Changes"
+      om -k --request-timeout 3600 apply-changes
+    # fi

@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opsman-config-pks-script
+data:
+  run.sh: |
+    #!/bin/bash
+    set -eux
+    echo "====> Waiting for opsman to respond with real cert"
+    until $(curl --output /dev/null --silent --head --fail https://${OM_TARGET}/setup); do
+      printf '.'
+      sleep 5
+    done
+
+    om_generate_cert() (
+      local domains="$1"
+      local data=$(echo $domains | jq --raw-input -c '{"domains": (. | split(" "))}')
+      local response=$(
+        om -k \
+            curl \
+            --silent \
+            --path "/api/v0/certificates/generate" \
+            -x POST \
+            -d $data
+        )
+        echo "$response"
+    )
+
+    if [[ -z "${CERT_PEM}" ]] || [[ -z "${KEY_PEM}" ]]; then
+      CERTIFICATES=$(om_generate_cert "${DNS}")
+      CERT_PEM=`echo $CERTIFICATES | jq -r '.certificate' | sed 's/^/        /'`
+      KEY_PEM=`echo $CERTIFICATES | jq -r '.key' | sed 's/^/        /'`
+    fi
+    cat << EOF > /tmp/keys.yaml
+    ---
+    product-properties:
+      .pivotal-container-service.pks_tls:
+        value:
+          cert_pem: |
+    $CERT_PEM
+          private_key_pem: |
+    $KEY_PEM
+    EOF
+
+    echo "====> check if we already have pks staged"
+    if om -k staged-config --product-name pivotal-container-service; then
+      echo "PKS already staged, skipping download"
+    else
+      echo "====> downloading pks product and stemcell"
+      om -k --request-timeout 3600 \
+        download-product \
+        --pivnet-api-token=${PIVNET_API_TOKEN} \
+        --output-directory=/tmp \
+        --pivnet-file-glob 'pivotal-container-service*.pivotal' \
+        --product-version "${VERSION}" \
+        --pivnet-product-slug 'pivotal-container-service' \
+        --stemcell-iaas google --download-stemcell
+
+      echo "====> uploading pks tile"
+      FILENAME=$(cat /tmp/download-file.json | jq -r ".product_path")
+      om -k \
+        --request-timeout 3600 upload-product -p ${FILENAME}
+
+      echo "====> uploading stemcell"
+      STEMCELL=$(cat /tmp/download-file.json | jq -r ".stemcell_path")
+      om -k \
+        --request-timeout 3600 upload-stemcell \
+        --stemcell ${STEMCELL}
+
+    echo "====> staging PKS"
+    PRODUCT_NAME=$(om -k tile-metadata \
+      --product-path /tmp/pivotal-container-service-*.pivotal \
+      --product-name)
+
+    PRODUCT_VERSION=$(om -k tile-metadata \
+      --product-path /tmp/pivotal-container-service-*.pivotal \
+      --product-version)
+
+    om -k --request-timeout 3600 \
+        stage-product \
+        --product-name "${PRODUCT_NAME}" \
+        --product-version "${PRODUCT_VERSION}"
+    fi
+
+    # combine pks and keys
+    echo "====> configuring PKS"
+    yq m /etc/pks/config/pks.yaml /tmp/keys.yaml > /tmp/pks-with-keys.yaml
+
+    om -k --request-timeout 3600 \
+        configure-product \
+        --config /tmp/pks-with-keys.yaml
+
+    echo "====> apply changes"
+    om -k --request-timeout 3600 \
+        apply-changes
+
+    echo "PKS API: https://${DNS}:9021"
+    echo "UAA: https://${DNS}:8443"

@@ -1,0 +1,27 @@
+# Default values for opsman.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+version: 2.6.8-build.192
+storageBucket: ops-manager-us
+
+instance:
+  zone: us-central1-a
+  machineType: zones/us-central1-a/machineTypes/n1-standard-2
+
+database:
+  password: a-bad-opsman-password
+  host: "%"
+
+dns:
+  # don't put a `.` at the end.
+  zone:
+
+opsmanAddress:
+
+opsman:
+  config:
+    projectID:

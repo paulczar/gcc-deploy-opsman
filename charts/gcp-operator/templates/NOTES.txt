@@ -1,0 +1,3 @@
+GCP Operator is now running in your cluster.
+
+To view activity run `kubectl -n {{ .Release.Namespace }} logs deployment/{{ include "gcp-operator.fullname" . }}`

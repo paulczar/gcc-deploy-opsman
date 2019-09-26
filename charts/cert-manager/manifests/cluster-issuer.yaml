@@ -1,0 +1,39 @@
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: 'username.taken@gmail.com'
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    http01: {}
+    dns01:
+      providers:
+      - name: staging-clouddns
+        clouddns:
+          project: pgtm-pczarkowski
+          serviceAccountSecretRef:
+            name: gcp-key
+            key: key.json
+---
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: 'username.taken@gmail.com'
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    http01: {}
+    dns01:
+      providers:
+      - name: prod-clouddns
+        clouddns:
+          project: pgtm-pczarkowski
+          serviceAccountSecretRef:
+            name: gcp-key
+            key: key.json

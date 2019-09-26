@@ -6,13 +6,16 @@ This describes using a base GKE cluster (yeah weird right) to spin up the infras
 
 ## Preperation
 
-First you need a GKE cluster (the smallest one possible is fine) and a CloudSQL postgres cluster.
+You need a GKE cluster... you can use the following to get a default cluster:
 
-Use the GCP gui to get those started.
+```
+gcloud container clusters create platform-automation \
+  --zone us-central1-c
+```
 
 ## Helm etc
 
-You should have helm installed, We use `helm template` to create our manifests.
+You should have helm installed, We're using helm 3 to avoid tiller.
 
 ## Deploy Google Config Connector (GCC)
 
@@ -20,9 +23,10 @@ Export some env vars:
 
 ```bash
 export PROJECT_ID=pgtm-pczarkowski
+export FQDN=example.com
 ```
 
-## Configure GCP service account for GCC
+## Configure GCP service account for Google Config Connector (GCC)
 
 ```bash
 gcloud iam service-accounts create cnrm-system
@@ -39,19 +43,16 @@ gcloud iam service-accounts keys create --iam-account \
 Install GCC to GKE Cluster:
 
 ```bash
-kubectl create namespace cnrm-system
-kubectl create secret generic gcp-key --from-file key.json --namespace cnrm-system
+kubectl create namespace cnrm-system tekton-install-pks
+kubectl -n cnrm-system create secret generic gcp-key \
+    --from-file key.json
 ```
 
-Download and install GCC:
+install GCC:
 
 ```bash
-curl -X GET -sLS \
-  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-  --location-trusted \
-  https://us-central1-cnrm-eap.cloudfunctions.net/download/latest/infra/install-bundle.tar.gz | tar xzvf -
-
-kubectl apply -f install-bundle/
+k apply -f charts/gcc/crd
+helm install gcc ./charts/gcc --namespace cnrm-system
 ```
 
 
@@ -62,13 +63,28 @@ kubectl apply -f install-bundle/
 > Note: before running this modify the PROJECT ID in `gcp-operator/operator.yaml`
 
 ```bash
-kubectl -n cnrm-system apply -f gcp-operator
+kubectl apply -f charts/gcp-operator/crd
+
+helm install gcp-operator ./charts/gcp-operator --namespace cnrm-system \
+  --set watchNamespace=$PROJECT_ID
+
 ```
 
-Create a namespace that matches your PROJECT ID:
+## Cert Manager
 
-```bash
-kubectl create namespace $PROJECT_ID
+This will allow for the use of a real cert for opsman
+
+
+```
+kubectl apply -f charts/cert-manager/manifests/crds.yaml
+helm install cert-manager stable/cert-manager \
+  --values charts/cert-manager/values.yaml \
+  --namespace cnrm-system
+
+kubectl apply -f charts/cert-manager/manifests/cluster-issuer.yaml
+
+```
+
 ```
 
 ## Deploy Ops Manager
@@ -78,33 +94,86 @@ kubectl create namespace $PROJECT_ID
 2. Create manifests from helm and apply them:
 
 ```bash
-helm template opsman --name gcc --namespace pgtm-pczarkowski > deploy/opsman.yaml
-kubectl -n $PROJECT_ID apply -f opsman.yaml
+helm install opsman ./charts/opsman --namespace $PROJECT_ID \
+  --set "dns.zone=$FQDN" --set "opsman.config.projectID=$PROJECT_ID"
+
 ```
 
 ## Set up DNS for opsman
 
-manually right now
-
-## Deploy Concourse
-
-1. edit `./concourse/values.yaml`
-
-2. Deploy
+Get opsman ip address from gcloud and pass it to a helm upgrade (you should persist it in a values file)
 
 ```bash
-$ helm install stable/concourse --name concourse --version 8.2.5 \
-   --namespace concourse --values ./concourse/values.yaml
+IP=$(gcloud compute addresses describe opsman-pks-api --region us-central1 --format "value(address)")
+
+helm upgrade opsman ./charts/opsman --namespace $PROJECT_ID \
+  --set "opsmanIP=$IP" --set "dns.zone=$FQDN" \
+  --set "opsman.config.projectID=$PROJECT_ID"
 ```
 
-## Configure Opsman
+
+## Deploy tekton
 
 ```bash
-fly -t control-plane login -c http://127.0.0.1:8080
+kubectl apply -f manifests/tekton
+```
 
- fly -t control-plane set-pipeline \
-     -p install-pks \
-     -c pipeline.yml \
-     -l env.yml
+create configmap / secret for opsman creds:
+
+```
+kubectl create ns tekton-install-pks
+
+kubectl -n tekton-install-pks create secret \
+    generic google-credentials \
+    --from-file="key.json"
+
+kubectl -n tekton-install-pks create configmap \
+    opsman-auth \
+    --from-literal="host=opsman.$FQDN" \
+    --from-literal="user=admin"
+
+kubectl -n tekton-install-pks create secret \
+    generic opsman-auth \
+    --from-literal="password=this-is-a-bad-password" \
+    --from-literal="decryptionPassword=lets-encrypt-this-thing"
+
+kubectl -n tekton-install-pks create configmap \
+    pks-config \
+    --from-literal="dns=pks.$FQDN" \
+    --from-literal="version=1.5.0"
+
+kubectl -n tekton-install-pks create secret \
+    generic pivnet-auth \
+    --from-literal="token=XXXXXX"
+```
+
+
+Edit `config/pks.yaml` to match your deployed infrastructure
+
+Create secret from `config/pks.yaml`:
+
+```bash
+kubectl -n tekton-install-pks create secret \
+  generic opsman-pks-config --from-file ./config/pks.yaml
+```
+
+Create the tasks and pipeline:
+
+```bash
+kubectl -n tekton-install-pks apply -f tekton-pipeline/task
+kubectl -n tekton-install-pks apply -f tekton-pipeline/pipeline/install-pks.yaml
+```
+
+Run the pipeline:
+
+```bash
+kubectl -n tekton-install-pks apply -f tekton-pipeline/pipeline/pipeline-run.yaml
+```
+
+Check on status of pipeline:
+
+```bash
+kubectl -n tekton-install-pks get pods
+kubectl -n tekton-install-pks logs ...
 
 ```

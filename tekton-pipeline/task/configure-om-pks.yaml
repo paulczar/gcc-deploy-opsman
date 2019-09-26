@@ -1,0 +1,58 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: configure-opsman-pks
+spec:
+  steps:
+    - name: configure-opsman-pks
+      image: paulczar/om
+      env:
+        - name: OM_TARGET
+          valueFrom:
+            configMapKeyRef:
+              name: opsman-auth
+              key: host
+        - name: OM_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: opsman-auth
+              key: user
+        - name: OM_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: opsman-auth
+              key: password
+        - name: PIVNET_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: pivnet-auth
+              key: token
+        - name: DNS
+          valueFrom:
+            configMapKeyRef:
+              name: pks-config
+              key: dns
+        - name: VERSION
+          valueFrom:
+            configMapKeyRef:
+              name: pks-config
+              key: version
+        - name: CERT_PEM
+          valueFrom:
+            secretKeyRef:
+              name: opsman-pks-cert
+              key: tls.crt
+        - name: KEY_PEM
+          valueFrom:
+            secretKeyRef:
+              name: opsman-pks-cert
+              key: tls.key
+      volumeMounts:
+        - name: pks-config-scripts
+          mountPath: /scripts
+        - name: pks-config-volume
+          mountPath: /etc/pks/config
+      command:
+        - bash
+      args:
+        - /scripts/run.sh

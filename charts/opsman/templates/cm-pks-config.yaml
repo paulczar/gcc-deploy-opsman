@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "opsman.fullname" . }}-pks-config
+  namespace: tekton-install-pks
+  labels:
+    app.kubernetes.io/name: {{ include "opsman.name" . }}
+    helm.sh/chart: {{ include "opsman.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  pks.yaml: |-
+    product-name: pivotal-container-service
+    product-properties:
+      .properties.pks_api_hostname:
+        value: pks.{{ .Values.dns.zone }}
+      .properties.plan1_selector:
+        value: Plan Active
+      .properties.plan1_selector.active.master_az_placement:
+        value: [us-central1-a]
+      .properties.plan1_selector.active.master_vm_type:
+        value: medium.disk
+      .properties.plan1_selector.active.worker_az_placement:
+        value: [us-central1-a,us-central1-b,us-central1-c]
+      .properties.plan1_selector.active.worker_vm_type:
+        value: medium.disk
+      .properties.plan1_selector.active.worker_persistent_disk_type:
+        value: "51200"
+      .properties.plan1_selector.active.worker_instances:
+        value: 1
+      .properties.plan2_selector:
+        value: Plan Active
+      .properties.plan2_selector.active.master_az_placement:
+        value: [us-central1-a]
+      .properties.plan2_selector.active.master_vm_type:
+        value: medium.disk
+      .properties.plan2_selector.active.worker_az_placement:
+        value: [us-central1-a,us-central1-b,us-central1-c]
+      .properties.plan2_selector.active.worker_vm_type:
+        value: xlarge
+      .properties.plan2_selector.active.worker_persistent_disk_type:
+        value: "102400"
+      .properties.plan2_selector.active.worker_instances:
+        value: 6
+      .properties.plan3_selector:
+        value: Plan Active
+      .properties.plan3_selector.active.master_az_placement:
+        value: [us-central1-a,us-central1-b,us-central1-c]
+      .properties.plan3_selector.active.master_vm_type:
+        value: medium.disk
+      .properties.plan3_selector.active.worker_az_placement:
+        value: [us-central1-a,us-central1-b,us-central1-c]
+      .properties.plan3_selector.active.master_instances:
+        value: 3
+      .properties.plan3_selector.active.worker_vm_type:
+        value: xlarge
+      .properties.plan3_selector.active.worker_persistent_disk_type:
+        value: "102400"
+      .properties.plan3_selector.active.worker_instances:
+        value: 9
+      .properties.cloud_provider:
+        value: GCP
+      .properties.cloud_provider.gcp.project_id:
+        value: {{ .Values.opsman.config.projectID }}
+      .properties.cloud_provider.gcp.network:
+        value: {{ include "opsman.fullname" . }}-pks-network
+      .properties.cloud_provider.gcp.master_service_account:
+        value: {{ include "opsman.fullname" . }}-pks-master@pgtm-pczarkowski.iam.gserviceaccount.com
+      .properties.cloud_provider.gcp.worker_service_account:
+        value: {{ include "opsman.fullname" . }}-pks-worker@pgtm-pczarkowski.iam.gserviceaccount.com
+      .properties.telemetry_selector:
+        value: enabled
+      .properties.telemetry_installation_purpose_selector:
+        value: demo_or_poc
+      .properties.vm_extensions:
+        value:
+        - public_ip
+      .properties.oidc_selector:
+        value: enabled
+    network-properties:
+      network:
+        name: {{ include "opsman.fullname" . }}-pks-subnet
+      service_network:
+        name: {{ include "opsman.fullname" . }}-pks-services
+      other_availability_zones:
+        - name: us-central1-a
+        - name: us-central1-b
+        - name: us-central1-c
+      singleton_availability_zone:
+        name: us-central1-a
+    resource-config:
+      pivotal-container-service:
+        instance_type:
+          id: micro
+        elb_names:
+        - tcp:{{ include "opsman.fullname" . }}-pks-api
+        internet_connected: true

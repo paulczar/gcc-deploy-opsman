@@ -1,0 +1,26 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: instances.compute.google.golang.org
+spec:
+  group: compute.google.golang.org
+  names:
+    kind: Instance
+    listKind: InstanceList
+    plural: instances
+    singular: instance
+  additionalPrinterColumns:
+    - name: Status
+      type: string
+      description: The status of the instance
+      JSONPath: .status.status
+    - name: InternalIP
+      type: string
+      description: The primary internal IP address of the instance
+      JSONPath: .status.primaryInternalIP
+    - name: ExternalIP
+      type: string
+      description: The primary external IP address of the instance
+      JSONPath: .status.primaryExternalIP
+  scope: Namespaced
+  version: v1

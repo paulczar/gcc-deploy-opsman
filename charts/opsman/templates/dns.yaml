@@ -1,0 +1,32 @@
+apiVersion: dns.google.golang.org/v1
+kind: ManagedZone
+metadata:
+  name: {{ include "opsman.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "opsman.name" . }}
+    helm.sh/chart: {{ include "opsman.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  name: {{ include "opsman.fullname" . }}
+  dnsName: "{{ .Values.dns.zone }}."
+  description: "zone for {{ include "opsman.fullname" . }} - {{ .Values.dns.zone }}"
+---
+{{- if .Values.opsmanAddress }}
+apiVersion: dns.google.golang.org/v1
+kind: Record
+metadata:
+  name: {{ include "opsman.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "opsman.name" . }}
+    helm.sh/chart: {{ include "opsman.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    dns.gce/zone: "{{ .Values.dns.zone }}."
+spec:
+  name: "opsman.{{ .Values.dns.zone }}."
+  type: "A"
+  ttl: 120
+  rrdatas: ["{{ .Values.opsmanAddress }}"]
+{{- end }}

@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gcp-operator.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "gcp-operator.name" . }}
+    helm.sh/chart: {{ include "gcp-operator.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "gcp-operator.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "gcp-operator.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccount: {{ include "gcp-operator.fullname" . }}
+      volumes:
+        - name: gcloud
+          secret:
+            secretName: {{ .Values.secret.name }}
+            items:
+            - key: key.json
+              path: creds
+              mode: 511
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 60000
+              name: metrics
+          command:
+            - gcp-cloud-compute-operator
+          volumeMounts:
+          - name: gcloud
+            mountPath: "/mnt/gcloud"
+          env:
+            - name: WATCH_NAMESPACE
+              value: {{ .Values.watchNamespace }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "gcp-cloud-compute-operator"
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: "/mnt/gcloud/creds"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

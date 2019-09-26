@@ -1,0 +1,25 @@
+Congratulations you have deployed Pivotal Ops Manager to GCP
+
+{{- if .Values.opsmanAddress }}
+
+Point your web browser to https://opsman.{{ .Values.dns.zone }}
+
+If it fails you may need to way for DNS to propagate, you should ensure you've
+set up NS records for your domain registrar for google to manage this zone.
+
+{{- else }}
+Run the following to get the IP address of Ops Manager.
+
+```
+IP=$(kubectl -n {{ .Release.Namespace }} get instance {{ include "opsman.fullname" . }} -o json | jq -r .status.primaryExternalIP)
+```
+
+Then update this helm chart with that IP like so:
+
+```
+helm upgrade opsman ./charts/opsman --namespace pgtm-pczarkowski \
+  --set "opsmanAddress=$IP"
+```
+
+or you can just set it in /etc/hosts.
+{{- end }}

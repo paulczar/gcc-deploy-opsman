@@ -1,0 +1,23 @@
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: {{ include "opsman.fullname" . }}-pks
+  namespace: tekton-install-pks
+  labels:
+    app.kubernetes.io/name: {{ include "opsman.name" . }}
+    helm.sh/chart: {{ include "opsman.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  secretName: {{ include "opsman.fullname" . }}-pks-cert
+  dnsNames:
+  - pks.{{ .Values.dns.zone }}
+  acme:
+    config:
+    - dns01:
+        provider: prod-clouddns
+      domains:
+        - pks.{{ .Values.dns.zone }}
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer

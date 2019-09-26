@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: install-pks
+spec:
+  pipelineRef:
+    name: install-pks
+  podTemplate:
+    volumes:
+      - name: config-scripts
+        configMap:
+          name: opsman-iaas-config-scripts
+      - name: iaas-config-files
+        configMap:
+          name: opsman-iaas-config
+      - name: iaas-config-secrets
+        secret:
+          secretName: google-credentials
+      - name: pks-config-scripts
+        configMap:
+          name: opsman-config-pks-script
+      - name: pks-config-volume
+        configMap:
+          name: opsman-pks-config
