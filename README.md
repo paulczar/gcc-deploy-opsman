@@ -151,15 +151,6 @@ kubectl -n tekton-install-pks create secret \
 ```
 
 
-Edit `config/pks.yaml` to match your deployed infrastructure
-
-Create secret from `config/pks.yaml`:
-
-```bash
-kubectl -n tekton-install-pks create secret \
-  generic opsman-pks-config --from-file ./config/pks.yaml
-```
-
 Create the tasks and pipeline:
 
 ```bash
