@@ -18,12 +18,12 @@ data:
       > /tmp/config.yaml
 
     echo "--> send config to opsman"
-    # if om -k staged-products | grep pivotal-container-service > /dev/null; then
-    #   echo "PKS is already staged, do not reconfigure IAAS"
-    # else
+    if om -k staged-products | grep pivotal-container-service > /dev/null; then
+      echo "PKS is already staged, do not reconfigure IAAS"
+    else
       om -k --request-timeout 3600 \
         configure-director --config /tmp/config.yaml
 
       echo "====> Apply Changes"
       om -k --request-timeout 3600 apply-changes
-    # fi
+    fi

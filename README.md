@@ -1,5 +1,7 @@
 # New and fancy GCP lab for PKS
 
+> This repo is a working proof of concept. There may be some hard coded things in here that I haven't found (or am too lazy to fix) ... so don't just follow the instructions blindly.  You can always `grep -r czar` and that would probably find most hardcoded bits.
+
 This describes using a base GKE cluster (yeah weird right) to spin up the infrastructure required to install PKS.  It uses a combination of [Google Config Connector](https://cloud.google.com/config-connector/docs/reference/resources) and my own deprecated [GCP Operator](https://github.com/paulczar/gcp-cloud-compute-operator).
 
 > Note: The use of GCP Operator will disappear over time as GCC becomes more fully featured.
@@ -74,6 +76,7 @@ helm install gcp-operator ./charts/gcp-operator --namespace cnrm-system \
 
 This will allow for the use of a real cert for opsman
 
+> Note you'll need to edit `cluster-issuer.yaml` to suit your environment, I should add it into the helm chart.
 
 ```
 kubectl apply -f charts/cert-manager/manifests/crds.yaml
