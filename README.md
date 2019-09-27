@@ -142,7 +142,12 @@ kubectl -n tekton-install-pks create secret \
 kubectl -n tekton-install-pks create configmap \
     pks-config \
     --from-literal="dns=pks.$FQDN" \
-    --from-literal="version=1.5.0"
+    --from-literal="version=1.5.0" \
+    --from-literal="username=pksadmin"
+
+kubectl -n tekton-install-pks create secret \
+    generic pks-config \
+    --from-literal="password=XXXXX"
 
 kubectl -n tekton-install-pks create secret \
     generic pivnet-auth \

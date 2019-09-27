@@ -27,6 +27,16 @@ spec:
             configMapKeyRef:
               name: pks-config
               key: dns
+        - name: PKS_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: pks-config
+              key: username
+        - name: PKS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pks-config
+              key: password
       volumeMounts:
         - name: pks-config-scripts
           mountPath: /scripts

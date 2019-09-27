@@ -113,13 +113,17 @@ data:
 
     uaa get-client-credentials-token admin -s "$UAA_CRED"
 
-    echo "====> check if user ${OM_USERNAME} exists"
-    if ! uaa get-user ${OM_USERNAME} > /dev/null; then
-      echo "--> create user ${OM_USERNAME}"
-      uaa create-user ${OM_USERNAME} --email ${OM_USERNAME}@${DNS} \
-        -p ${OM_PASSWORD} --familyName ${OM_USERNAME} --givenName ${OM_USERNAME}
-      echo "--> add user ${OM_USERNAME} to pks.clusters.admin"
-      uaa add-member pks.clusters.admin ${OM_USERNAME}
+    echo "====> check if user ${PKS_USERNAME} exists"
+    if ! uaa get-user ${PKS_USERNAME} > /dev/null; then
+      echo "--> create user ${PKS_USERNAME}"
+      uaa create-user ${PKS_USERNAME} --email ${PKS_USERNAME}@${DNS} \
+        -p ${PKS_PASSWORD} --familyName ${PKS_USERNAME} --givenName ${PKS_USERNAME}
+      echo "--> add user ${PKS_USERNAME} to pks.clusters.admin"
+      uaa add-member pks.clusters.admin ${PKS_USERNAME}
     else
-      echo "user ${OM_USERNAME} already exists"
+      echo "user ${PKS_USERNAME} already exists"
     fi
+
+    echo "====> Finished!"
+    echo "log into PKS with -"
+    echo '$ pks login -k -a pks.demo.paulczar.wtf -u "pksadmin" -p "XXXXXX"'
