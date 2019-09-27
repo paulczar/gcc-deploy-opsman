@@ -14,11 +14,13 @@ Run the following to get the IP address of Ops Manager.
 IP=$(kubectl -n {{ .Release.Namespace }} get instance {{ include "opsman.fullname" . }} -o json | jq -r .status.primaryExternalIP)
 ```
 
+PKS=$(gcloud compute addresses describe opsman-pks-api --region us-central1 --format "value(address)")
+
 Then update this helm chart with that IP like so:
 
 ```
 helm upgrade opsman ./charts/opsman --namespace {{ .Release.Namespace }} \
-  --set "opsmanAddress=$IP"
+  --set "opsmanAddress=$IP" --set "pksAddress=$PKS"
 ```
 
 or you can just set it in /etc/hosts.

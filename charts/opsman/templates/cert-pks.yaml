@@ -19,5 +19,5 @@ spec:
       domains:
         - pks.{{ .Values.dns.zone }}
   issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
+    name: {{ include "opsman.fullname" . }}
+    kind: Issuer

@@ -33,3 +33,9 @@ google:
 pks:
   plans:
     addons: ""
+
+database:
+  enabled: false
+  host:
+  user:
+  pass:

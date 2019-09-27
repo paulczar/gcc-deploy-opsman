@@ -12,6 +12,10 @@ data:
   pks.yaml: |-
     product-name: pivotal-container-service
     product-properties:
+      .pivotal-container-service.pks_tls:
+        value:
+          cert_pem: ""
+          private_key_pem: ""
       .properties.bosh-metric-sink-node-exporter:
         value: false
       .properties.bosh-metric-sink-outputs:
@@ -64,7 +68,7 @@ data:
         selected_option: active
         value: Plan Active
       .properties.plan1_selector.active.addons_spec:
-        value: ""{{ .Values.pks.plans.addons }}""
+        value: "{{ .Values.pks.plans.addons }}"
       .properties.plan1_selector.active.allow_privileged_containers:
         value: false
       .properties.plan1_selector.active.description:
@@ -284,7 +288,7 @@ data:
       other_availability_zones:
       {{- range .Values.google.zones }}
       - name: {{ . }}
-      {{- end }}}
+      {{- end }}
       service_network:
         name: {{ include "opsman.fullname" . }}-pks-services
       singleton_availability_zone:

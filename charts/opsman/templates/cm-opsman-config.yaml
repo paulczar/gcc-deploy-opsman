@@ -27,7 +27,7 @@ data:
     az-configuration:
     {{- range .Values.google.zones }}
       - name: {{ . }}
-    {{- end }}}
+    {{- end }}
     networks-configuration:
       icmp_checks_enabled: false
       networks:

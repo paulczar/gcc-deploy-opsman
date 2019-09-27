@@ -45,7 +45,10 @@ gcloud iam service-accounts keys create --iam-account \
 Install GCC to GKE Cluster:
 
 ```bash
-kubectl create namespace cnrm-system tekton-install-pks
+kubectl create namespace cnrm-system
+kubectl create namespace tekton-install-pks
+kubectl create namespace pgtm-pczarkowski
+
 kubectl -n cnrm-system create secret generic gcp-key \
     --from-file key.json
 ```
@@ -91,7 +94,7 @@ helm install cert-manager stable/cert-manager \
 
 ```bash
 helm install opsman ./charts/opsman --namespace $PROJECT_ID \
-  --set "dns.zone=$FQDN" --set "opsman.config.projectID=$PROJECT_ID"
+  --set "dns.zone=$FQDN" --set "projectID=$PROJECT_ID"
 
 ```
 
