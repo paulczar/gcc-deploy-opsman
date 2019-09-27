@@ -80,10 +80,7 @@ data:
     # combine pks and keys
     echo "====> configuring PKS"
     echo "--> combine config with TLS certs"
-    cat /etc/pks/config/pks.yaml
-    cat /tmp/keys.yaml
     yq m -x /etc/pks/config/pks.yaml /tmp/keys.yaml > /tmp/pks-with-keys.yaml
-    cat /tmp/pks-with-keys.yaml
     echo "--> configure product"
     om -k --request-timeout 3600 \
         configure-product \
