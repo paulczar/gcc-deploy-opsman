@@ -35,10 +35,35 @@ gcloud iam service-accounts create cnrm-system
 
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member serviceAccount:cnrm-system@$PROJECT_ID.iam.gserviceaccount.com \
-  --role roles/owner
+  --role roles/owner --name google-config-connector
 
 gcloud iam service-accounts keys create --iam-account \
   cnrm-system@$PROJECT_ID.iam.gserviceaccount.com key.json
+
+```
+
+## Configure GCP service account for PKS
+
+> working on not needing to do this, but for now :shrug:
+
+```bash
+gcloud iam service-accounts create pks-master
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member serviceAccount:opsman-pks-master@$PROJECT_ID.iam.gserviceaccount.com \
+  --name opsman-pks-master \
+  --role roles/compute.networkAdmin \
+  --role roles/compute.instanceAdmin \
+  --role roles/compute.storageAdmin \
+  --role roles/compute.securityAdmin \
+  --role roles/iam.serviceAccountActor
+
+gcloud iam service-accounts create pks-worker
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member serviceAccount:opsman-pks-worker@$PROJECT_ID.iam.gserviceaccount.com \
+  --name opsman-pks-master \
+  --role roles/compute.viewer \
 
 ```
 
