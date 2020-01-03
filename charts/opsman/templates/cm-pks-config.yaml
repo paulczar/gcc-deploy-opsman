@@ -16,11 +16,6 @@ data:
         value:
           cert_pem: ""
           private_key_pem: ""
-      .properties.bosh-metric-sink-node-exporter:
-        value: false
-      .properties.bosh-metric-sink-outputs:
-        value: |
-          [[outputs.discard]]
       .properties.cloud_provider:
         selected_option: gcp
         value: GCP
@@ -312,7 +307,7 @@ data:
       smoke-tests:
         post-deploy-state: false
       upgrade-all-service-instances:
-        post-deploy-state: true
+        post-deploy-state: false
       wavefront-alert-creation:
         post-deploy-state: false
       wavefront-alert-deletion:

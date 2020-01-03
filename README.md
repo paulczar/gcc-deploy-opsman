@@ -167,7 +167,7 @@ kubectl -n tekton-install-pks create secret \
 kubectl -n tekton-install-pks create configmap \
     pks-config \
     --from-literal="dns=pks.$FQDN" \
-    --from-literal="version=1.5.0" \
+    --from-literal="version=1.6.0" \
     --from-literal="username=pksadmin"
 
 kubectl -n tekton-install-pks create secret \
@@ -190,7 +190,7 @@ kubectl -n tekton-install-pks apply -f tekton-pipeline/pipeline/install-pks.yaml
 Run the pipeline:
 
 ```bash
-kubectl -n tekton-install-pks apply -f tekton-pipeline/pipeline/pipeline-run.yaml
+kubectl -n tekton-install-pks apply -f tekton-pipeline/pipeline-run/install-pks.yaml
 ```
 
 Check on status of pipeline:
@@ -199,4 +199,34 @@ Check on status of pipeline:
 kubectl -n tekton-install-pks get pods
 kubectl -n tekton-install-pks logs ...
 
+```
+
+## Misc Operations
+
+### Update Opsman / PKS certs
+
+Unfortunately the Opsman cert is not fully managed, cert-manager in kubernetes will update the cert itself, but it doesn't auto apply to cert manager. Here's how to upgrade it:
+
+```bash
+kubectl -n tekton-install-pks apply -f tekton-pipeline/task-run/update-opsman-cert.yaml
+```
+
+The same can be said for the PKS certificate, Doing a re-configure of PKS will have it pick up the new certificate. This can take some time if it decides to run the "upgrade all clusters" errand, however it shouldn't cause downtime:
+
+```bash
+kubectl -n tekton-install-pks apply -f tekton-pipeline/task-run/configure-pks.yaml
+```
+
+### Upgrade PKS
+
+This should be relatively straight forward between versions that don't change too much. Since we created a `configmap` that contains our version, we can edit that configmap, change the version and run an update:
+
+> Note: A release with breaking changes to the pks properties structure may require updating the helm chart first.
+
+```bash
+kubectl -n tekton-install-pks edit configmap pks-config
+```
+
+```bash
+kubectl -n tekton-install-pks apply -f tekton-pipeline/task-run/configure-pks.yaml
 ```

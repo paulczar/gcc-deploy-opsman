@@ -1,0 +1,19 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: upgrade-opsman-cert
+spec:
+  tasks:
+    - name: configure-opsman-cert
+      taskRef:
+        name: configure-opsman-cert
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: upgrade-opsman-cert
+spec:
+  pipelineRef:
+    name: upgrade-opsman-cert
+  podTemplate:
+    volumes: []

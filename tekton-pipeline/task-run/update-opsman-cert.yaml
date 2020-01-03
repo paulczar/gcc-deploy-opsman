@@ -1,0 +1,7 @@
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  name: update-opsman-cert
+spec:
+  taskRef:
+    name: configure-opsman-cert
