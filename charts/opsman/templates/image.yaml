@@ -1,5 +1,5 @@
-apiVersion: "compute.google.golang.org/v1"
-kind: "Image"
+apiVersion: compute.cnrm.cloud.google.com/v1alpha3
+kind: ComputeImage
 metadata:
   name: "{{ include "opsman.fullname" . }}-{{ .Values.version | replace "." "-" }}"
   labels:
@@ -8,8 +8,8 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
-  name: "{{ include "opsman.fullname" . }}-{{ .Values.version | replace "." "-" }}"
   description: "image for operations manager version - {{ .Values.version }}"
+  family: ubuntu-custom
   rawDisk:
     source: "https://storage.googleapis.com/{{.Values.storageBucket }}/pcf-gcp-{{ .Values.version }}.tar.gz"
 ---

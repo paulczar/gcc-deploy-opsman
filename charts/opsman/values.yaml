@@ -18,11 +18,23 @@ database:
 
 dns:
   # don't put a `.` at the end.
+  createZone: false
   zone: example.com
+
+iam:
+  create: false
+  masterRoles:
+    - roles/compute.networkAdmin
+    - roles/compute.instanceAdmin
+    - roles/compute.storageAdmin
+    - roles/compute.securityAdmin
+    - roles/iam.serviceAccountActor
+  workerRoles:
+    - roles/compute.viewer
 
 opsmanAddress:
 pksAddress:
-projectID:
+projectID: google-project-id
 
 certManagerEmail: paul@here.com
 
@@ -36,6 +48,5 @@ pks:
 
 database:
   enabled: false
-  host:
-  user:
-  pass:
+  host: "%"
+  password:

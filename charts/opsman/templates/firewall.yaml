@@ -1,4 +1,4 @@
-apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+apiVersion: compute.cnrm.cloud.google.com/v1alpha3
 kind: ComputeFirewall
 metadata:
   name: "{{ include "opsman.fullname" . }}-allow-https"
@@ -17,7 +17,7 @@ spec:
   sourceRanges: ["0.0.0.0/0"]
   targetTags: ["allow-https"]
 ---
-apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+apiVersion: compute.cnrm.cloud.google.com/v1alpha3
 kind: ComputeFirewall
 metadata:
   name: "{{ include "opsman.fullname" . }}-allow-ssh"
@@ -36,7 +36,7 @@ spec:
   sourceRanges: ["0.0.0.0/0"]
   targetTags: ["allow-ssh"]
 ---
-apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+apiVersion: compute.cnrm.cloud.google.com/v1alpha3
 kind: ComputeFirewall
 metadata:
   name: "{{ include "opsman.fullname" . }}-allow-http"
@@ -55,7 +55,7 @@ spec:
   sourceRanges: ["0.0.0.0/0"]
   targetTags: ["allow-http"]
 ---
-apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+apiVersion: compute.cnrm.cloud.google.com/v1alpha3
 kind: ComputeFirewall
 metadata:
   name: "{{ include "opsman.fullname" . }}-all"

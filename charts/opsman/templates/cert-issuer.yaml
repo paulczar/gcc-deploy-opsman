@@ -2,6 +2,7 @@ apiVersion: certmanager.k8s.io/v1alpha1
 kind: Issuer
 metadata:
   name: {{ include "opsman.fullname" . }}
+  namespace: tekton-install-pks
   labels:
     app.kubernetes.io/name: {{ include "opsman.name" . }}
     helm.sh/chart: {{ include "opsman.chart" . }}

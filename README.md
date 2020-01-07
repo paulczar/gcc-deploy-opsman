@@ -15,6 +15,13 @@ gcloud container clusters create platform-automation \
   --zone us-central1-c
 ```
 
+Get the credentials:
+
+```
+gcloud container clusters get-credentials platform-automation \
+  --zone us-central1-c
+```
+
 ## Helm etc
 
 You should have helm installed, We're using helm 3 to avoid tiller.
@@ -38,7 +45,7 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
   --role roles/owner --name google-config-connector
 
 gcloud iam service-accounts keys create --iam-account \
-  cnrm-system@$PROJECT_ID.iam.gserviceaccount.com key.json
+  cnrm-system@$PROJECT_ID.iam.gserviceaccount.com scratch/key.json
 
 ```
 
@@ -67,22 +74,37 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 
 ```
 
-Install GCC to GKE Cluster:
+Set up cluster namespaces:
 
 ```bash
 kubectl create namespace cnrm-system
 kubectl create namespace tekton-install-pks
 kubectl create namespace pgtm-pczarkowski
-
-kubectl -n cnrm-system create secret generic gcp-key \
-    --from-file key.json
 ```
 
-install GCC:
+Create secret for GCC:
 
 ```bash
-k apply -f charts/gcc/crd
-helm install gcc ./charts/gcc --namespace cnrm-system
+kubectl -n cnrm-system create secret generic gcp-key \
+    --from-file scratch/key.json
+```
+
+download GCC:
+
+```bash
+cd scratch
+curl -X GET -sLO \
+-H "Authorization: Bearer $(gcloud auth print-access-token)" \
+--location-trusted \
+https://us-central1-cnrm-eap.cloudfunctions.net/download/latest/infra/install-bundle.tar.gz
+```
+
+Untar and apply:
+
+```bash
+tar xzvf install-bundle.tar.gz
+k apply -n cnrm-system -f install-bundle/
+cd ..
 ```
 
 
@@ -113,7 +135,7 @@ helm install cert-manager stable/cert-manager \
 
 ## Deploy Ops Manager
 
-1. edit `./opsman/values.yaml` to change any defaults
+1. edit `./charts/opsman/values.yaml` to change any defaults
 
 2. Create manifests from helm and apply them:
 
@@ -139,7 +161,7 @@ helm upgrade opsman ./charts/opsman --namespace $PROJECT_ID \
 ```
 
 
-## Deploy tekton
+## Deploy tekton and Run automation
 
 ```bash
 kubectl apply -f manifests/tekton
@@ -152,7 +174,7 @@ kubectl create ns tekton-install-pks
 
 kubectl -n tekton-install-pks create secret \
     generic google-credentials \
-    --from-file="key.json"
+    --from-file="scratch/key.json"
 
 kubectl -n tekton-install-pks create configmap \
     opsman-auth \
@@ -179,7 +201,6 @@ kubectl -n tekton-install-pks create secret \
     --from-literal="token=XXXXXX"
 ```
 
-
 Create the tasks and pipeline:
 
 ```bash
@@ -196,10 +217,49 @@ kubectl -n tekton-install-pks apply -f tekton-pipeline/pipeline-run/install-pks.
 Check on status of pipeline:
 
 ```bash
-kubectl -n tekton-install-pks get pods
-kubectl -n tekton-install-pks logs ...
-
+$ kubectl -n tekton-install-pks get pipelineruns
+NAME          SUCCEEDED   REASON    STARTTIME   COMPLETIONTIME
+install-pks   Unknown     Running   30s
 ```
+
+```bash
+kubectl -n tekton-install-pks logs -l "tekton.dev/pipeline=install-pks" -f
+```
+
+## Connect to PKS and create a cluster
+
+Make sure you have the PKS CLI installed and then run:
+
+```bash
+kubectl -n tekton-install-pks get secrets pks-config -o json | jq -r .data.password | base64 --decode
+pks login -k -a pks.$FQDN -u "pksadmin"
+```
+
+Create a cluster:
+
+```bash
+pks create-cluster cluster1 --plan basic --external-hostname k8s.cluster1.$FQDN
+```
+
+Set DNS for that cluster:
+
+> Note: you'll need to find the name of your zone via `gcloud dns managed-zones list`.
+
+```bash
+ZONE=opsman
+CLUSTER_DNS=$(pks cluster cluster1 | grep "Master Host" | awk '{print $4}')
+UUID=$(pks cluster cluster1 | grep "UUID" | awk '{print $2}')
+EXTERNAL_IP=$(gcloud compute addresses list | grep pks-$UUID | awk '{print $3}')
+
+gcloud dns record-sets transaction start --zone=$ZONE \
+  --transaction-file=scratch/dns.yaml
+gcloud dns record-sets transaction add "$EXTERNAL_IP" \
+  --name=$CLUSTER_DNS. --type=A --zone=$ZONE --ttl=14400 \
+  --transaction-file=scratch/dns.yaml
+gcloud dns record-sets transaction execute --zone=$ZONE \
+  --transaction-file=scratch/dns.yaml
+```
+
 
 ## Misc Operations
 

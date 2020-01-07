@@ -46,7 +46,7 @@ spec:
   region: us-central1
   target: https://www.googleapis.com/compute/v1/projects/{{ .Values.projectID }}/regions/us-central1/targetPools/{{ include "opsman.fullname" . }}-pks-api
 ---
-apiVersion: compute.cnrm.cloud.google.com/v1alpha1
+apiVersion: compute.cnrm.cloud.google.com/v1alpha3
 kind: ComputeFirewall
 metadata:
   name: "{{ include "opsman.fullname" . }}-pks-api"

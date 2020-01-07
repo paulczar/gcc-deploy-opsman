@@ -63,7 +63,7 @@ data:
         selected_option: active
         value: Plan Active
       .properties.plan1_selector.active.addons_spec:
-        value: "{{ .Values.pks.plans.addons }}"
+        value: {{ .Values.pks.plans.addons | quote }}
       .properties.plan1_selector.active.allow_privileged_containers:
         value: false
       .properties.plan1_selector.active.description:
@@ -82,7 +82,7 @@ data:
       .properties.plan1_selector.active.kubelet_drain_ignore_daemonsets:
         value: true
       .properties.plan1_selector.active.kubelet_drain_timeout:
-        value: 0
+        value: 10
       .properties.plan1_selector.active.master_az_placement:
         value:
         - {{ index .Values.google.zones 1 }}
@@ -112,7 +112,7 @@ data:
         selected_option: active
         value: Plan Active
       .properties.plan2_selector.active.addons_spec:
-        value: "{{ .Values.pks.plans.addons }}"
+        value: {{ .Values.pks.plans.addons | quote }}
       .properties.plan2_selector.active.admission_plugins:
         value:
         - pod_security_policy
@@ -134,7 +134,7 @@ data:
       .properties.plan2_selector.active.kubelet_drain_ignore_daemonsets:
         value: true
       .properties.plan2_selector.active.kubelet_drain_timeout:
-        value: 0
+        value: 10
       .properties.plan2_selector.active.master_az_placement:
         value:
         - {{ index .Values.google.zones 1 }}
@@ -163,7 +163,7 @@ data:
         selected_option: active
         value: Plan Active
       .properties.plan3_selector.active.addons_spec:
-        value: "{{ .Values.pks.plans.addons }}"
+        value: {{ .Values.pks.plans.addons | quote }}
       .properties.plan3_selector.active.allow_privileged_containers:
         value: false
       .properties.plan3_selector.active.description:
@@ -181,7 +181,7 @@ data:
       .properties.plan3_selector.active.kubelet_drain_ignore_daemonsets:
         value: true
       .properties.plan3_selector.active.kubelet_drain_timeout:
-        value: 0
+        value: 10
       .properties.plan3_selector.active.master_az_placement:
         value:
         {{- range .Values.google.zones }}
@@ -262,11 +262,11 @@ data:
         selected_option: internal
         value: internal
       .properties.uaa_pks_cli_access_token_lifetime:
-        value: 600
+        value: 2600
       .properties.uaa_pks_cli_refresh_token_lifetime:
-        value: 21600
+        value: 2160000
       .properties.uaa_pks_cluster_client_access_token_lifetime:
-        value: 600
+        value: 2600
       .properties.uaa_pks_cluster_client_refresh_token_lifetime:
         value: 21600
       .properties.vm_extensions:
@@ -294,11 +294,11 @@ data:
         persistent_disk:
           size_mb: automatic
         instance_type:
-          id: micro
+          id: large
         internet_connected: true
         elb_names:
         - tcp:{{ include "opsman.fullname" . }}-pks-api
-        max_in_flight: 1
+        max_in_flight: 4
     errand-config:
       delete-all-clusters:
         pre-delete-state: true

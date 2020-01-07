@@ -6,6 +6,8 @@ data:
   run.sh: |
     #!/bin/bash
     set -eux
+
+    SKIP_DOWNLOAD=
     echo "====> Waiting for opsman to respond with real cert"
     until $(curl --output /dev/null --silent --head --fail https://${OM_TARGET}/setup); do
       printf '.'
@@ -41,7 +43,10 @@ data:
       echo "====> check if its the current version"
       if om -k staged-products | grep "pivotal-container-service" | grep "${VERSION}" > /dev/null; then
         echo "Current version of PKS already staged, skipping download"
-      else
+        SKIP_DOWNLOAD=true
+      fi
+    fi
+    if [[ -z "${SKIP_DOWNLOAD}" ]]; then
         echo "====> downloading pks product and stemcell"
         om -k --request-timeout 3600 \
           download-product \
@@ -76,7 +81,6 @@ data:
           stage-product \
           --product-name "${PRODUCT_NAME}" \
           --product-version "${PRODUCT_VERSION}"
-      fi
     fi
 
     # combine pks and keys

@@ -1,5 +1,5 @@
-apiVersion: compute.google.golang.org/v1
-kind: Address
+apiVersion: compute.cnrm.cloud.google.com/v1alpha3
+kind: ComputeAddress
 metadata:
   name: {{ include "opsman.fullname" . }}-pks-api
   labels:
@@ -8,5 +8,6 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
-  region: us-central1
-  name: {{ include "opsman.fullname" . }}-pks-api
+  addressType: EXTERNAL
+  description: PKS API Load Balancer
+  location: us-central1

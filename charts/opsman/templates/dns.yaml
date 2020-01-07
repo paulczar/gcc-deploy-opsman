@@ -1,5 +1,6 @@
-apiVersion: dns.google.golang.org/v1
-kind: ManagedZone
+{{- if .Values.dns.createZone }}
+apiVersion: dns.cnrm.cloud.google.com/v1alpha1
+kind: DNSManagedZone
 metadata:
   name: {{ include "opsman.fullname" . }}
   labels:
@@ -11,6 +12,7 @@ spec:
   name: {{ include "opsman.fullname" . }}
   dnsName: "{{ .Values.dns.zone }}."
   description: "zone for {{ include "opsman.fullname" . }} - {{ .Values.dns.zone }}"
+{{- end }}
 {{- if .Values.pksAddress }}
 ---
 apiVersion: dns.google.golang.org/v1
