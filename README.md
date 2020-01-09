@@ -31,7 +31,7 @@ You should have helm installed, We're using helm 3 to avoid tiller.
 Export some env vars:
 
 ```bash
-export PROJECT_ID=pgtm-pczarkowski
+export PROJECT_ID=example-project-id
 export FQDN=example.com
 ```
 
@@ -42,7 +42,7 @@ gcloud iam service-accounts create cnrm-system
 
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member serviceAccount:cnrm-system@$PROJECT_ID.iam.gserviceaccount.com \
-  --role roles/owner --name google-config-connector
+  --role roles/owner
 
 gcloud iam service-accounts keys create --iam-account \
   cnrm-system@$PROJECT_ID.iam.gserviceaccount.com scratch/key.json
@@ -80,7 +80,7 @@ Untar and apply:
 
 ```bash
 tar xzvf install-bundle.tar.gz
-k apply -n cnrm-system -f install-bundle/
+k apply -n cnrm-system -f scratch/install-bundle/
 cd ..
 ```
 
@@ -129,7 +129,7 @@ Get opsman ip address from gcloud and pass it to a helm upgrade (you should pers
 ```bash
 PKS_IP=$(gcloud compute addresses describe opsman-pks-api --region us-central1 --format "value(address)")
 
-OPSMAN_IP=$()
+OPSMAN_IP=$(kubectl -n $PROJECT_ID get instances -o custom-columns=":status.primaryExternalIP" --no-headers)
 
 helm upgrade opsman ./charts/opsman --namespace $PROJECT_ID \
   --set "opsmanAddress=$OPSMAN_IP" --set "dns.zone=$FQDN" \
@@ -160,7 +160,7 @@ kubectl -n tekton-install-pks create configmap \
 
 kubectl -n tekton-install-pks create secret \
     generic opsman-auth \
-    --from-literal="password=this-is-a-bad-password" \
+    --from-literal="password=opsman-password" \
     --from-literal="decryptionPassword=lets-encrypt-this-thing"
 
 kubectl -n tekton-install-pks create configmap \
@@ -171,7 +171,7 @@ kubectl -n tekton-install-pks create configmap \
 
 kubectl -n tekton-install-pks create secret \
     generic pks-config \
-    --from-literal="password=XXXXX"
+    --from-literal="password=pks-password"
 
 kubectl -n tekton-install-pks create secret \
     generic pivnet-auth \
