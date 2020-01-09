@@ -1,0 +1,12 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: wait-five-minutes
+spec:
+  steps:
+    - name: wait-five-minutes
+      image: paulczar/om
+      command:
+        - sleep
+      args:
+        - "300"

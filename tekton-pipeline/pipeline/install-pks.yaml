@@ -8,8 +8,13 @@ spec:
       taskRef:
         name: configure-opsman-auth
 
-    - name: configure-opsman-cert
+    - name: wait-five-minutes
       runAfter: [configure-opsman-auth]
+      taskRef:
+        name: wait-five-minutes
+
+    - name: configure-opsman-cert
+      runAfter: [wait-five-minutes]
       taskRef:
         name: configure-opsman-cert
 
