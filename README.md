@@ -89,8 +89,6 @@ cd ..
 
 > Note: The original GCP Operator still has some resource support that is missing in GCC.  Soon we hope to remote the need for this.
 
-> Note: before running this modify the PROJECT ID in `gcp-operator/operator.yaml`
-
 ```bash
 kubectl apply -f charts/gcp-operator/crd
 
@@ -102,6 +100,8 @@ helm install gcp-operator ./charts/gcp-operator --namespace cnrm-system \
 ## Cert Manager
 
 This will allow for the use of a real cert for opsman
+
+> Note: if you don't have the stable repo in helm you may need to run `helm repo add stable https://kubernetes-charts.storage.googleapis.com`.
 
 ```
 kubectl apply -f charts/cert-manager/manifests/crds.yaml
@@ -224,8 +224,9 @@ Set DNS for that cluster:
 
 ```bash
 ZONE=opsman
-CLUSTER_DNS=$(pks cluster cluster1 | grep "Master Host" | awk '{print $4}')
-UUID=$(pks cluster cluster1 | grep "UUID" | awk '{print $2}')
+CLUSTER_NAME=workshop
+CLUSTER_DNS=$(pks cluster $CLUSTER_NAME | grep "Master Host" | awk '{print $4}')
+UUID=$(pks cluster $CLUSTER_NAME | grep "UUID" | awk '{print $2}')
 EXTERNAL_IP=$(gcloud compute addresses list | grep pks-$UUID | awk '{print $3}')
 
 gcloud dns record-sets transaction start --zone=$ZONE \
