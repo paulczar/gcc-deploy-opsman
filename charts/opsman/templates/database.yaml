@@ -1,5 +1,5 @@
 {{- if .Values.database.enabled }}
-apiVersion: sql.cnrm.cloud.google.com/v1alpha3
+apiVersion: sql.cnrm.cloud.google.com/v1beta1
 kind: SQLInstance
 metadata:
   name: {{ include "opsman.fullname" . }}

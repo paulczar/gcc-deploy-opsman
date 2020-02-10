@@ -1,5 +1,5 @@
 {{- if .Values.dns.createZone }}
-apiVersion: dns.cnrm.cloud.google.com/v1alpha1
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
 kind: DNSManagedZone
 metadata:
   name: {{ include "opsman.fullname" . }}

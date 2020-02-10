@@ -1,4 +1,4 @@
-apiVersion: compute.cnrm.cloud.google.com/v1alpha3
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
 kind: ComputeNetwork
 metadata:
   name: {{ include "opsman.fullname" . }}-pks-network
@@ -11,7 +11,7 @@ spec:
   description: network for PKS install
   routingMode: REGIONAL
 ---
-apiVersion: compute.cnrm.cloud.google.com/v1alpha3
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
 kind: ComputeSubnetwork
 metadata:
   name: {{ include "opsman.fullname" . }}-pks-infrastructure
@@ -28,7 +28,7 @@ spec:
     name: {{ include "opsman.fullname" . }}-pks-network
   region: us-central1
 ---
-apiVersion: compute.cnrm.cloud.google.com/v1alpha3
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
 kind: ComputeSubnetwork
 metadata:
   name: {{ include "opsman.fullname" . }}-pks-subnet
@@ -45,7 +45,7 @@ spec:
     name: {{ include "opsman.fullname" . }}-pks-network
   region: us-central1
 ---
-apiVersion: compute.cnrm.cloud.google.com/v1alpha3
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
 kind: ComputeSubnetwork
 metadata:
   name: {{ include "opsman.fullname" . }}-pks-services

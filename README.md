@@ -37,6 +37,8 @@ export FQDN=example.com
 
 ## Configure GCP service account for Google Config Connector (GCC)
 
+Make sure the IAM api is enabled - https://console.cloud.google.com/apis/library/iam.googleapis.com
+
 ```bash
 gcloud iam service-accounts create cnrm-system
 
