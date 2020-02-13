@@ -12,7 +12,7 @@ You need a GKE cluster... you can use the following to get a default cluster:
 
 ```
 gcloud container clusters create platform-automation \
-  --zone us-central1-c
+  --zone us-central1-c --num-nodes 1
 ```
 
 Get the credentials:
@@ -20,6 +20,20 @@ Get the credentials:
 ```
 gcloud container clusters get-credentials platform-automation \
   --zone us-central1-c
+```
+
+Make sure you can create roles:
+
+```
+kubectl auth can-i create roles
+```
+
+if the answer is __NO__ then run:
+
+```
+kubectl create clusterrolebinding cluster-admin-binding \
+--clusterrole cluster-admin \
+--user [ACCOUNT_EMAIL]
 ```
 
 ## Helm etc
@@ -35,9 +49,9 @@ export PROJECT_ID=example-project-id
 export FQDN=example.com
 ```
 
-## Configure GCP service account for Google Config Connector (GCC)
+## Create a GCP service account for Google Config Connector (GCC)
 
-Make sure the IAM api is enabled - https://console.cloud.google.com/apis/library/iam.googleapis.com
+> Note: Make sure the IAM api is enabled - https://console.cloud.google.com/apis/library/iam.googleapis.com
 
 ```bash
 gcloud iam service-accounts create cnrm-system
@@ -72,24 +86,23 @@ download GCC:
 
 ```bash
 cd scratch
-curl -X GET -sLO \
--H "Authorization: Bearer $(gcloud auth print-access-token)" \
---location-trusted \
-https://us-central1-cnrm-eap.cloudfunctions.net/download/latest/infra/install-bundle.tar.gz
+gsutil cp gs://cnrm/latest/release-bundle.tar.gz \
+  release-bundle.tar.gz
 ```
 
 Untar and apply:
 
 ```bash
-tar xzvf install-bundle.tar.gz
-k apply -n cnrm-system -f scratch/install-bundle/
+tar xzvf release-bundle.tar.gz
 cd ..
+kubectl apply -n cnrm-system -f scratch/install-bundle-gcp-identity
+
 ```
 
 
 ## Deploy GCP Operator
 
-> Note: The original GCP Operator still has some resource support that is missing in GCC.  Soon we hope to remote the need for this.
+> Note: The original GCP Operator still has some resource support that is missing in GCC.  Soon we hope to remove the need for this.
 
 ```bash
 kubectl apply -f charts/gcp-operator/crd
@@ -105,7 +118,7 @@ This will allow for the use of a real cert for opsman
 
 > Note: if you don't have the stable repo in helm you may need to run `helm repo add stable https://kubernetes-charts.storage.googleapis.com`.
 
-```
+```bash
 kubectl apply -f charts/cert-manager/manifests/crds.yaml
 helm install cert-manager stable/cert-manager \
   --values charts/cert-manager/values.yaml \
@@ -120,8 +133,16 @@ helm install cert-manager stable/cert-manager \
 
 ```bash
 helm install opsman ./charts/opsman --namespace $PROJECT_ID \
-  --set "dns.zone=$FQDN" --set "projectID=$PROJECT_ID"
+  --set "dns.zone=$FQDN" --set "projectID=$PROJECT_ID" \
+  --set "certManagerEmail=your@email.address"
+```
 
+3. Wait ... a while. When the following command gives you a status of `RUNNING` and a set of IP addresses you're good to move on.
+
+```bash
+$ kubectl -n $PROJECT_ID get instances
+NAME     STATUS    INTERNALIP      EXTERNALIP
+opsman   RUNNING   192.168.101.5   35.188.43.128
 ```
 
 ## Set up DNS for opsman
@@ -201,8 +222,10 @@ NAME          SUCCEEDED   REASON    STARTTIME   COMPLETIONTIME
 install-pks   Unknown     Running   30s
 ```
 
+> Note: [stern](https://github.com/wercker/stern/releases) is a richer log viewer for kubernetes resources. you could use `kubectl logs` here if you prefer.
+
 ```bash
-kubectl -n tekton-install-pks logs -l "tekton.dev/pipeline=install-pks" -f
+stern -n tekton-install-pks -l "tekton.dev/pipeline=install-pks"
 ```
 
 ## Connect to PKS and create a cluster
@@ -210,8 +233,9 @@ kubectl -n tekton-install-pks logs -l "tekton.dev/pipeline=install-pks" -f
 Make sure you have the PKS CLI installed and then run:
 
 ```bash
-kubectl -n tekton-install-pks get secrets pks-config -o json | jq -r .data.password | base64 --decode
-pks login -k -a pks.$FQDN -u "pksadmin"
+PKS_PASSWORD=`kubectl -n tekton-install-pks get secrets pks-config -o json | jq -r .data.password | base64 --decode`
+
+pks login -k -a pks.$FQDN -u "pksadmin" -p "$PKS_PASSWORD"
 ```
 
 Create a cluster:
@@ -226,7 +250,7 @@ Set DNS for that cluster:
 
 ```bash
 ZONE=opsman
-CLUSTER_NAME=workshop
+CLUSTER_NAME=cluster1
 CLUSTER_DNS=$(pks cluster $CLUSTER_NAME | grep "Master Host" | awk '{print $4}')
 UUID=$(pks cluster $CLUSTER_NAME | grep "UUID" | awk '{print $2}')
 EXTERNAL_IP=$(gcloud compute addresses list | grep pks-$UUID | awk '{print $3}')

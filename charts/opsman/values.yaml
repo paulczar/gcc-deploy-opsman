@@ -12,17 +12,13 @@ instance:
   zone: us-central1-a
   machineType: zones/us-central1-a/machineTypes/n1-standard-2
 
-database:
-  password: a-bad-opsman-password
-  host: "%"
-
 dns:
   # don't put a `.` at the end.
   createZone: false
   zone: example.com
 
 iam:
-  create: false
+  create: true
   masterRoles:
     - roles/compute.networkAdmin
     - roles/compute.instanceAdmin

@@ -2,3 +2,4 @@ install-bundle
 key.json
 envs/*.yaml
 envs/*.yml
+scratch/
